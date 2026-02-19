@@ -16,6 +16,66 @@ namespace AzuriteUI.Web.Services.Azurite;
 /// </remarks>
 public interface IAzuriteService
 {
+    #region Queue Management
+    /// <summary>
+    /// Retrieves an asynchronous enumerable of queue names from Azurite.
+    /// </summary>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
+    /// <returns>An asynchronous enumerable of queue names.</returns>
+    Task<IEnumerable<string>> GetQueuesAsync(CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Retrieves messages from a specified queue.
+    /// </summary>
+    /// <param name="queueName">The name of the queue.</param>
+    /// <param name="maxMessages">The maximum number of messages to retrieve.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
+    /// <returns>A list of queue messages.</returns>
+    Task<IEnumerable<string>> GetQueueMessagesAsync(string queueName, int maxMessages = 32, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds a message to the specified queue.
+    /// </summary>
+    /// <param name="queueName">The name of the queue.</param>
+    /// <param name="messageText">The text of the message to add.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <exception cref="ArgumentException">Thrown if the queue name is invalid.</exception>
+    /// <exception cref="AzuriteServiceException">Thrown if there is an error adding the message.</exception>
+    Task AddQueueMessageAsync(string queueName, string messageText, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes a message from the specified queue.
+    /// </summary>
+    /// <param name="queueName">The name of the queue.</param>
+    /// <param name="messageId">The ID of the message to delete.</param>
+    /// <param name="popReceipt">The pop receipt of the message.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <exception cref="ArgumentException">Thrown if the queue name or message ID is invalid.</exception>
+    /// <exception cref="AzuriteServiceException">Thrown if there is an error deleting the message.</exception>
+    Task DeleteQueueMessageAsync(string queueName, string messageId, string popReceipt, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves detailed info for messages in a queue.
+    /// </summary>
+    /// <param name="queueName">The name of the queue.</param>
+    /// <param name="maxMessages">The maximum number of messages to retrieve.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
+    /// <returns>A list of detailed queue messages.</returns>
+    /// <exception cref="ArgumentException">Thrown if the queue name is invalid.</exception>
+    /// <exception cref="AzuriteServiceException">Thrown if there is an error retrieving the message details.</exception>
+    Task<IEnumerable<Azure.Storage.Queues.Models.QueueMessage>> GetQueueMessagesDetailedAsync(string queueName, int maxMessages = 32, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves detailed info for all queues.
+    /// </summary>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
+    /// <returns>A list of detailed queue items.</returns>
+    /// <exception cref="AzuriteServiceException">Thrown if there is an error retrieving the queue details.</exception>
+    Task<IEnumerable<Azure.Storage.Queues.Models.QueueItem>> GetQueuesDetailedAsync(CancellationToken cancellationToken = default);
+    #endregion
+
     #region Azurite Properties and Health
     /// <summary>
     /// The connection string used to connect to the Azurite service.
@@ -125,7 +185,7 @@ public interface IAzuriteService
     /// <param name="blobName">The name of the blob to retrieve.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
     /// <returns>A task that represents the asynchronous operation, with a value of the blob properties.</returns>
-    /// <exception cref="ArgumentException">Thrown if the container name or blob name is invalid.</exception>
+    /// <exception cref="ArgumentException">Thrown if the container name or blob Name is invalid.</exception>
     /// <exception cref="ResourceNotFoundException">Thrown if the specified blob or container does not exist.</exception>
     /// <exception cref="AzuriteServiceException">Thrown if there is an error retrieving the blob properties.</exception>
     Task<AzuriteBlobItem> GetBlobAsync(string containerName, string blobName, CancellationToken cancellationToken = default);

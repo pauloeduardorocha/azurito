@@ -1,5 +1,6 @@
 using AzuriteUI.Web.Controllers.Models;
 using AzuriteUI.Web.Services.Repositories;
+using AzuriteUI.Web.Services.Azurite;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -10,12 +11,23 @@ namespace AzuriteUI.Web.Pages;
 /// </summary>
 /// <param name="repository">The storage repository for accessing data.</param>
 /// <param name="logger">The logger for diagnostics.</param>
-public class IndexModel(IStorageRepository repository, ILogger<IndexModel> logger) : PageModel
+public class IndexModel : PageModel
 {
+    private readonly IStorageRepository repository;
+    private readonly IAzuriteService azuriteService;
+    private readonly ILogger<IndexModel> logger;
+
+    public IndexModel(IStorageRepository repository, IAzuriteService azuriteService, ILogger<IndexModel> logger)
+    {
+        this.repository = repository;
+        this.azuriteService = azuriteService;
+        this.logger = logger;
+    }
     /// <summary>
     /// Gets the dashboard data.
     /// </summary>
     public DashboardResponse? Dashboard { get; private set; }
+    public IEnumerable<string>? Queues { get; private set; }
 
     /// <summary>
     /// Handles GET requests to the dashboard page.
@@ -25,11 +37,11 @@ public class IndexModel(IStorageRepository repository, ILogger<IndexModel> logge
         try
         {
             Dashboard = await repository.GetDashboardDataAsync(HttpContext.RequestAborted);
+            Queues = await azuriteService.GetQueuesAsync(HttpContext.RequestAborted);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to load dashboard data");
-            // Set empty dashboard data so the page still renders
             Dashboard = new DashboardResponse
             {
                 Stats = new DashboardStats
@@ -42,7 +54,7 @@ public class IndexModel(IStorageRepository repository, ILogger<IndexModel> logge
                 RecentContainers = [],
                 RecentBlobs = []
             };
-            // TODO: Display error message as toast.
+            Queues = Enumerable.Empty<string>();
         }
         return Page();
     }

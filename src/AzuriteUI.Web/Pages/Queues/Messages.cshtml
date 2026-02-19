@@ -1,0 +1,53 @@
+@page "{queueName}"
+@model AzuriteUI.Web.Pages.Queues.MessagesModel
+@{
+    ViewData["Title"] = $"Queue: {Model.QueueName} Messages";
+}
+
+<h2>Messages in Queue: @Model.QueueName</h2>
+
+@if (Model.QueueInfo != null)
+{
+    <div class="mb-3">
+        <strong>Queue Metadata:</strong>
+        <ul>
+            <li><b>Name:</b> @Model.QueueInfo.Name</li>
+            <li><b>Approximate Message Count:</b> @Model.Messages?.Count()</li>
+        </ul>
+    </div>
+}
+
+@if (Model.DecodedMessages != null && Model.DecodedMessages.Any())
+{
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Message ID</th>
+                <th>Text</th>
+                <th>Insertion Time</th>
+                <th>Expiration Time</th>
+                <th>Next Visible Time</th>
+                <th>Pop Receipt</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var msg in Model.DecodedMessages)
+        {
+            <tr>
+                <td>@msg.Message.MessageId</td>
+                <td style="max-width: 40vw;overflow: auto;">
+                    @msg.DecodedText
+                </td>
+                <td>@msg.Message.InsertedOn</td>
+                <td>@msg.Message.ExpiresOn</td>
+                <td>@msg.Message.NextVisibleOn</td>
+                <td>@msg.Message.PopReceipt</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="alert alert-info">No messages found in this queue.</div>
+}
