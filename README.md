@@ -1,10 +1,10 @@
-# Azurite UI - the missing web console for Azurite
+# Azurito - A fork from Azurite UI that adds queues support
 
-A web-based developer console for [Azurite](https://github.com/Azure/Azurite), the Azure Storage emulator. Azurite UI provides an intuitive interface to manage containers and blobs in your local Azurite development environment, eliminating the need for command-line tools or third-party storage explorers.
+A web-based developer console for [Azurite](https://github.com/Azure/Azurite), the Azure Storage emulator. Azurito is a fork of Azurite UI which adds support for Queue storage in addition to the existing Blob functionality. Azurito provides an intuitive interface to manage containers, blobs and queues in your local Azurite development environment, eliminating the need for command-line tools or third-party storage explorers.
 
 ## Overview
 
-Azurite is a free, open-source emulator that provides a local environment simulating Azure Blob, Queue, and Table storage services for development and testing purposes. Azurite UI complements Azurite by providing a modern web interface for:
+Azurite is a free, open-source emulator that provides a local environment simulating Azure Blob, Queue, and Table storage services for development and testing purposes. Azurito complements Azurite by providing a modern web interface for:
 
 - **Container Management**: List, create, delete, and view properties for containers
 - **Blob Operations**: Browse, upload, download, delete, preview (images), and view properties for blobs
@@ -15,164 +15,18 @@ Azurite is a free, open-source emulator that provides a local environment simula
 
 Since this is a developer console designed for local development, no authentication is required and denial-of-service protections like rate limiting are not implemented.
 
-## Use of AI Statement
-
-- All C# code within the AzuriteUI.Web project was written "by hand" with no AI involvement.
-- CSS and HTML code within the AzuriteUI.Web project was written with the assistance of AI (specifically; Claude Code).
-- Unit and integration test helpers were written "by hand" with no AI involvement.
-- The actual tests were written by an AI agent (specifically; Claude Code).
-
-## Prerequisites
-
-- [.NET SDK](https://dotnet.microsoft.com/download) (version specified in global.json or project files)
-- [Cake](https://cakebuild.net/) build tool
-- [ReportGenerator](https://reportgenerator.io) code coverage reporting tool.
-- [Azurite](https://github.com/Azure/Azurite) (for runtime - can be run via Docker)
-
-To install Cake as a .NET tool:
-
-```bash
-dotnet tool install --global Cake.Tool
-```
-
-To install ReportGenerator as a .NET tool:
-
-```bash
-dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.4.18
-```
-
-## Building the Project
-
-This project uses [Cake](https://cakebuild.net/) for build automation. The build script provides several tasks for different scenarios.
-
-### Quick Start
-
-To run the default build (which performs a deep clean, build, and test):
-
-```bash
-dotnet cake
-```
-
-### Available Build Tasks
-
-#### Build Tasks
-
-- **Build** - Builds the solution
-
-  ```bash
-  dotnet cake --target=Build
-  ```
-
-- **Rebuild** - Performs a deep clean followed by a full build
-
-  ```bash
-  dotnet cake --target=Rebuild
-  ```
-
-#### Clean Tasks
-
-- **Clean** - Cleans the solution output directories and artifacts
-
-  ```bash
-  dotnet cake --target=Clean
-  ```
-
-- **DeepClean** - Removes all bin, obj, artifacts, test results, and test database files
-
-  ```bash
-  dotnet cake --target=DeepClean
-  ```
-
-#### Test Tasks
-
-- **Test** - Runs all tests with code coverage and generates reports (includes rebuild)
-
-  ```bash
-  dotnet cake --target=Test
-  ```
-
-  Test results are output to `./artifacts/test-results/` and coverage reports are generated in `./artifacts/coverage/`. The coverage summary is displayed in the console after test execution.
-
-#### CI Task
-
-- **CI** - Runs the full CI pipeline (deep clean, build, test, and Docker build)
-
-  ```bash
-  dotnet cake --target=CI
-  ```
-
-#### Docker Task
-
-- **Docker** - Builds the Docker container
-
-  ```bash
-  dotnet cake --target=Docker
-  ```
-
-### Build Configuration
-
-By default, builds use the `Release` configuration. To build in `Debug` mode:
-
-```bash
-dotnet cake --configuration=Debug
-```
-
-### Build Artifacts
-
-Build artifacts are organized in the `./artifacts/` directory:
-
-- `./artifacts/test-results/` - Test execution results and raw coverage data
-- `./artifacts/coverage/` - Generated coverage reports (Markdown, Text Summary, and LCOV formats)
-
-## Testing
-
-The project includes comprehensive integration and unit tests. Tests are automatically run with code coverage collection when using the `Test`, `CI`, or `Default` tasks.
-
-### Running Tests Manually
-
-```bash
-dotnet cake --target=Test
-```
-
-### Coverage Reports
-
-After running tests, coverage reports are available in multiple formats:
-
-- **Summary.txt** - Text-based coverage summary displayed in console
-- **SummaryGithub.md** - GitHub-flavored markdown summary
-- **lcov.info** - LCOV format for integration with coverage tools
-
-## Development
-
-### Project Structure
-
-- **src/** - Source code for the Azurite UI web application
-- **tests/** - Integration and unit tests
-- **docs/** - Additional documentation
-- **artifacts/** - Build outputs, test results, and coverage reports (generated)
-
-## Deployment
-
-The project includes Docker support for containerized deployment. Use Docker Compose to run Azurite UI alongside Azurite:
-
 ### Environment Configuration
-
-The Docker Compose setup supports environment variable configuration through a `.env` file. Copy [.env.example](./.env.example) to `.env` and modify as needed:
-
-```bash
-cp .env.example .env
-```
 
 Available environment variables:
 
 - `AZURITE_ACCOUNT_NAME` - Storage account name (default: devstoreaccount1)
 - `AZURITE_ACCOUNT_KEY` - Storage account key (default: well-known Azurite key)
 - `AZURITE_BLOB_PORT` - Blob service port (default: 10000)
-- `AZURITEUI_PORT` - AzuriteUI external port (default: 8080)
+- `AZURITEUI_PORT` - Azurito external port (default: 8080)
 
 ### Quick Start with Docker Compose
 
-Run Azurite UI with the published container image:
+Run Azurito with the published container image:
 
 ```bash
 docker compose -f docker-compose.example.yml up -d
@@ -206,11 +60,11 @@ services:
     environment:
       - AZURITE_ACCOUNTS=devstoreaccount1:Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==
 
-  # AzuriteUI - Web interface (exposed externally)
-  azuriteui:
-    image: ghcr.io/adrianhall/azurite-ui:1.0.0
-    container_name: azurite-ui
-    hostname: azurite-ui
+  # Azurito - Web interface (exposed externally)
+  azurito:
+    image: peduardoaraujo/azurito:latest
+    container_name: azurito
+    hostname: azurito
     restart: unless-stopped
     ports:
       - "8080:8080"  # Only expose UI
@@ -220,7 +74,7 @@ services:
     networks:
       - azurite-network
     volumes:
-      - azurite-ui-data:/app/data  # Persist SQLite cache database
+      - azurito-data:/app/data  # Persist SQLite cache database
     environment:
       # Connection string pointing to internal Azurite service
       - ConnectionStrings__Azurite=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;
@@ -243,8 +97,8 @@ volumes:
   azurite-data:
     name: azurite-data
     driver: local
-  azurite-ui-data:
-    name: azurite-ui-data
+  azurito-data:
+    name: azurito-data
     driver: local
 ```
 
@@ -256,19 +110,19 @@ Container images are automatically published to GitHub Container Registry with e
 
 ```bash
 # Pull specific version
-docker pull ghcr.io/adrianhall/azurite-ui:1.0.0
+docker pull peduardoaraujo/azurito:0.1
 
 # Pull latest stable release
-docker pull ghcr.io/adrianhall/azurite-ui:latest
+docker pull peduardoaraujo/azurito:latest
 ```
 
 For development builds from source, use [docker-compose.yml](./docker-compose.yml) which builds the image locally.
 
 ## Scope
 
-**Supported**: Blob storage container and blob operations
+**Supported**: Blob storage container, blob operations and Azure Queues
 
-**Not Supported**: Azure Queue and Table storage (available in Azurite but not targeted by this UI)
+**Not Supported**: Azure Table storage (available in Azurite but not targeted by this UI)
 
 ## Contributing
 

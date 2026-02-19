@@ -14,6 +14,9 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Register ProblemDetails for .NET 8+
+builder.Services.AddProblemDetails();
+
 // Get the required connection strings.
 var cacheConnectionString = builder.Configuration.GetRequiredConnectionString("CacheDatabase");
 var azuriteConnectionString = builder.Configuration.GetRequiredConnectionString("Azurite");
@@ -74,6 +77,9 @@ builder.Services
 // ==================================================================================================
 
 var app = builder.Build();
+
+// Use exception handler middleware
+app.UseExceptionHandler();
 
 app.UseStaticFiles();
 app.UseRouting();

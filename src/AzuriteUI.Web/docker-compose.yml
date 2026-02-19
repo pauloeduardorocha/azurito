@@ -1,0 +1,32 @@
+services:
+  # Azurito - Web interface (exposed externally)
+  azurito:
+    image: peduardoaraujo/azurito:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: azurito
+    restart: unless-stopped
+    ports:
+      - "8080:8080" # Only expose UI
+      - "10001:10001" # Expose Azurite queue endpoint
+    volumes:
+      - azurito-data:/app/data # Persist SQLite cache database
+    environment:
+      # Connection string pointing to internal Azurite service
+      - ConnectionStrings__Azurite=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;
+      - ConnectionStrings__Azurite=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;
+      - ConnectionStrings__CacheDatabase=Data Source=/app/data/cache.db;Mode=ReadWriteCreate;Cache=Shared;Foreign Keys=True;
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  azurito-data:
+    name: azurito-data
+    driver: local

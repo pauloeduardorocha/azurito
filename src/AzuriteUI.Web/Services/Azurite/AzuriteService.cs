@@ -75,6 +75,137 @@ public class AzuriteService : IAzuriteService
     /// The BlobServiceClient used to communicate with the Azurite service.
     /// </summary>
     internal BlobServiceClient ServiceClient { get; }
+    
+    /// <summary>
+    /// Retrieves an asynchronous enumerable of queue names from Azurite.
+    /// </summary>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
+    /// <returns>An asynchronous enumerable of queue names.</returns>
+    public async Task<IEnumerable<string>> GetQueuesAsync(CancellationToken cancellationToken = default)
+    {
+        Logger.LogDebug("GetQueuesAsync()");
+        var queueNames = new List<string>();
+        try
+        {
+            // Ensure QueueEndpoint is present in the connection string
+            var connStr = ConnectionString;
+            if (!connStr.Contains("QueueEndpoint"))
+            {
+                // Try to infer the endpoint from BlobEndpoint
+                var blobEndpointMatch = System.Text.RegularExpressions.Regex.Match(connStr, @"BlobEndpoint=([^;]+)");
+                if (blobEndpointMatch.Success)
+                {
+                    var blobEndpoint = blobEndpointMatch.Groups[1].Value;
+                    var queueEndpoint = blobEndpoint.Replace(":10000", ":10001").Replace("blob", "queue");
+                    connStr += $";QueueEndpoint={queueEndpoint}";
+                }
+                else
+                {
+                    // Fallback to default Azurite queue endpoint
+                    connStr += ";QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1";
+                }
+            }
+            var queueServiceClient = new Azure.Storage.Queues.QueueServiceClient(connStr);
+            await foreach (var queueItem in queueServiceClient.GetQueuesAsync(cancellationToken: cancellationToken))
+            {
+                queueNames.Add(queueItem.Name);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to retrieve queues from Azurite.");
+        }
+        return queueNames;
+    }
+    public async Task AddQueueMessageAsync(string queueName, string messageText, CancellationToken cancellationToken = default)
+    {
+        var connStr = ConnectionString;
+        if (!connStr.Contains("QueueEndpoint"))
+        {
+            var blobEndpointMatch = System.Text.RegularExpressions.Regex.Match(connStr, @"BlobEndpoint=([^;]+)");
+            if (blobEndpointMatch.Success)
+            {
+                var blobEndpoint = blobEndpointMatch.Groups[1].Value;
+                var queueEndpoint = blobEndpoint.Replace(":10000", ":10001").Replace("blob", "queue");
+                connStr += $";QueueEndpoint={queueEndpoint}";
+            }
+            else
+            {
+                connStr += ";QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1";
+            }
+        }
+        var queueClient = new Azure.Storage.Queues.QueueClient(connStr, queueName);
+        await queueClient.SendMessageAsync(messageText, cancellationToken: cancellationToken);
+    }
+
+    public async Task DeleteQueueMessageAsync(string queueName, string messageId, string popReceipt, CancellationToken cancellationToken = default)
+    {
+        var connStr = ConnectionString;
+        if (!connStr.Contains("QueueEndpoint"))
+        {
+            var blobEndpointMatch = System.Text.RegularExpressions.Regex.Match(connStr, @"BlobEndpoint=([^;]+)");
+            if (blobEndpointMatch.Success)
+            {
+                var blobEndpoint = blobEndpointMatch.Groups[1].Value;
+                var queueEndpoint = blobEndpoint.Replace(":10000", ":10001").Replace("blob", "queue");
+                connStr += $";QueueEndpoint={queueEndpoint}";
+            }
+            else
+            {
+                connStr += ";QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1";
+            }
+        }
+        var queueClient = new Azure.Storage.Queues.QueueClient(connStr, queueName);
+        await queueClient.DeleteMessageAsync(messageId, popReceipt, cancellationToken: cancellationToken);
+    }
+
+    public async Task<IEnumerable<Azure.Storage.Queues.Models.QueueMessage>> GetQueueMessagesDetailedAsync(string queueName, int maxMessages = 32, CancellationToken cancellationToken = default)
+    {
+        var connStr = ConnectionString;
+        if (!connStr.Contains("QueueEndpoint"))
+        {
+            var blobEndpointMatch = System.Text.RegularExpressions.Regex.Match(connStr, @"BlobEndpoint=([^;]+)");
+            if (blobEndpointMatch.Success)
+            {
+                var blobEndpoint = blobEndpointMatch.Groups[1].Value;
+                var queueEndpoint = blobEndpoint.Replace(":10000", ":10001").Replace("blob", "queue");
+                connStr += $";QueueEndpoint={queueEndpoint}";
+            }
+            else
+            {
+                connStr += ";QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1";
+            }
+        }
+        var queueClient = new Azure.Storage.Queues.QueueClient(connStr, queueName);
+        var response = await queueClient.ReceiveMessagesAsync(maxMessages, cancellationToken: cancellationToken);
+        return response.Value;
+    }
+
+    public async Task<IEnumerable<Azure.Storage.Queues.Models.QueueItem>> GetQueuesDetailedAsync(CancellationToken cancellationToken = default)
+    {
+        var connStr = ConnectionString;
+        if (!connStr.Contains("QueueEndpoint"))
+        {
+            var blobEndpointMatch = System.Text.RegularExpressions.Regex.Match(connStr, @"BlobEndpoint=([^;]+)");
+            if (blobEndpointMatch.Success)
+            {
+                var blobEndpoint = blobEndpointMatch.Groups[1].Value;
+                var queueEndpoint = blobEndpoint.Replace(":10000", ":10001").Replace("blob", "queue");
+                connStr += $";QueueEndpoint={queueEndpoint}";
+            }
+            else
+            {
+                connStr += ";QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1";
+            }
+        }
+        var queueServiceClient = new Azure.Storage.Queues.QueueServiceClient(connStr);
+        var result = new List<Azure.Storage.Queues.Models.QueueItem>();
+        await foreach (var queue in queueServiceClient.GetQueuesAsync(cancellationToken: cancellationToken))
+        {
+            result.Add(queue);
+        }
+        return result;
+    }
 
     #region Azurite Properties and Health
     /// <summary>
@@ -110,6 +241,47 @@ public class AzuriteService : IAzuriteService
         return health;
     }
     #endregion
+    
+    /// <summary>
+    /// Retrieves messages from a specified queue.
+    /// </summary>
+    /// <param name="queueName">The name of the queue.</param>
+    /// <param name="maxMessages">The maximum number of messages to retrieve.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
+    /// <returns>A list of queue messages.</returns>
+    public async Task<IEnumerable<string>> GetQueueMessagesAsync(string queueName, int maxMessages = 32, CancellationToken cancellationToken = default)
+    {
+        var messages = new List<string>();
+        try
+        {
+            var connStr = ConnectionString;
+            if (!connStr.Contains("QueueEndpoint"))
+            {
+                var blobEndpointMatch = System.Text.RegularExpressions.Regex.Match(connStr, @"BlobEndpoint=([^;]+)");
+                if (blobEndpointMatch.Success)
+                {
+                    var blobEndpoint = blobEndpointMatch.Groups[1].Value;
+                    var queueEndpoint = blobEndpoint.Replace(":10000", ":10001").Replace("blob", "queue");
+                    connStr += $";QueueEndpoint={queueEndpoint}";
+                }
+                else
+                {
+                    connStr += ";QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1";
+                }
+            }
+            var queueClient = new Azure.Storage.Queues.QueueClient(connStr, queueName);
+            var response = await queueClient.ReceiveMessagesAsync(maxMessages, cancellationToken: cancellationToken);
+            foreach (var msg in response.Value)
+            {
+                messages.Add(msg.MessageText);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, $"Failed to retrieve messages from queue '{queueName}'.");
+        }
+        return messages;
+    }
 
     #region Container Management
     /// <summary>

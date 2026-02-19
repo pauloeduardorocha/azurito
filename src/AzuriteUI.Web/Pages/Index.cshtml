@@ -51,6 +51,57 @@
 
     @* Recently Updated Tables *@
     <div class="row g-3">
+<script>
+    // Auto-refresh the queue info section every 10 seconds
+    setInterval(function() {
+        fetch(window.location.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(response => response.text())
+            .then(html => {
+                // Replace only the queues table section
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(html, 'text/html');
+                var newTable = doc.querySelector('[data-testid="queues-table"]');
+                var oldTable = document.querySelector('[data-testid="queues-table"]');
+                if (newTable && oldTable) {
+                    oldTable.parentNode.replaceChild(newTable, oldTable);
+                }
+            });
+    }, 10000);
+</script>
+    @* Queues Information *@
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="dashboard-table-container">
+                <h3 data-testid="queues-title">Queues</h3>
+                <div class="table-responsive">
+                    <table class="table table-hover" data-testid="queues-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Queues != null && Model.Queues.Any())
+                            {
+                                foreach (var queue in Model.Queues)
+                        {
+                            <tr class="cursor-pointer" onclick="window.location='/Queues/Messages/@queue'" style="cursor:pointer;">
+                                <td class="text-primary text-decoration-underline">@queue</td>
+                            </tr>
+                        }
+                            }
+                            else
+                            {
+                                <tr data-testid="no-queues">
+                                    <td class="text-center text-muted">No queues found</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
         @* Recently Updated Containers *@
         <div class="col-12 col-xl-6">
             <div class="dashboard-table-container">
