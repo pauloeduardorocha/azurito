@@ -492,3 +492,4 @@ tools/
 # AI generated files
 .claude/
 .cursor/
+/src/AzuriteUI.Web/cache.db

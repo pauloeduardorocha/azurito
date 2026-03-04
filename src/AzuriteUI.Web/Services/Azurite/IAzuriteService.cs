@@ -23,7 +23,7 @@ public interface IAzuriteService
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
     /// <returns>An asynchronous enumerable of queue names.</returns>
     Task<IEnumerable<string>> GetQueuesAsync(CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Retrieves messages from a specified queue.
     /// </summary>
@@ -62,10 +62,10 @@ public interface IAzuriteService
     /// <param name="queueName">The name of the queue.</param>
     /// <param name="maxMessages">The maximum number of messages to retrieve.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
-    /// <returns>A list of detailed queue messages.</returns>
+    /// <returns>A list of detailed peeked queue messages.</returns>
     /// <exception cref="ArgumentException">Thrown if the queue name is invalid.</exception>
     /// <exception cref="AzuriteServiceException">Thrown if there is an error retrieving the message details.</exception>
-    Task<IEnumerable<Azure.Storage.Queues.Models.QueueMessage>> GetQueueMessagesDetailedAsync(string queueName, int maxMessages = 32, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Azure.Storage.Queues.Models.PeekedMessage>> GetQueueMessagesDetailedAsync(string queueName, int maxMessages = 32, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Retrieves detailed info for all queues.
@@ -74,6 +74,37 @@ public interface IAzuriteService
     /// <returns>A list of detailed queue items.</returns>
     /// <exception cref="AzuriteServiceException">Thrown if there is an error retrieving the queue details.</exception>
     Task<IEnumerable<Azure.Storage.Queues.Models.QueueItem>> GetQueuesDetailedAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes a queue from the service.
+    /// </summary>
+    /// <param name="queueName">The name of the queue to delete.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
+    Task DeleteQueueAsync(string queueName, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Clears all messages from the specified queue.
+    /// </summary>
+    /// <param name="queueName">The name of the queue to clear.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
+    Task ClearQueueAsync(string queueName, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Dequeues (receives and removes) a single message from the specified queue.
+    /// </summary>
+    /// <param name="queueName">The name of the queue.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
+    /// <returns>The dequeued message or null if the queue was empty.</returns>
+    Task<Azure.Storage.Queues.Models.QueueMessage?> DequeueMessageAsync(string queueName, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates a new queue with the specified name.
+    /// </summary>
+    /// <param name="queueName">The name of the queue to create. Must be 3-63 chars, lowercase letters, numbers, and dashes, no consecutive dashes, cannot start/end with dash.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
+    /// <exception cref="ArgumentException">Thrown if the queue name is invalid.</exception>
+    Task CreateQueueAsync(string queueName, CancellationToken cancellationToken = default);
+
     #endregion
 
     #region Azurite Properties and Health

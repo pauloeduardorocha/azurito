@@ -58,4 +58,19 @@ public class IndexModel : PageModel
         }
         return Page();
     }
+
+    [BindProperty]
+    public string NewQueueName { get; set; } = string.Empty;
+
+    public async Task<IActionResult> OnPostCreateQueueAsync()
+    {
+        if (string.IsNullOrWhiteSpace(NewQueueName))
+        {
+            TempData["StatusMessage"] = "Queue name is required.";
+            return RedirectToPage();
+        }
+        await azuriteService.CreateQueueAsync(NewQueueName);
+        TempData["StatusMessage"] = $"Queue '{NewQueueName}' created.";
+        return RedirectToPage();
+    }
 }

@@ -75,12 +75,49 @@ public class AzuriteService : IAzuriteService
     /// The BlobServiceClient used to communicate with the Azurite service.
     /// </summary>
     internal BlobServiceClient ServiceClient { get; }
-    
+
     /// <summary>
     /// Retrieves an asynchronous enumerable of queue names from Azurite.
     /// </summary>
+    /// <param name="queueName"></param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
     /// <returns>An asynchronous enumerable of queue names.</returns>
+    public async Task CreateQueueAsync(string queueName, CancellationToken cancellationToken = default)
+    {
+        if (!IsValidQueueName(queueName))
+            throw new ArgumentException($"Invalid queue name '{queueName}'. Must be 3-63 chars, lowercase letters, numbers, and dashes, no consecutive dashes, cannot start/end with dash.", nameof(queueName));
+
+        var connStr = ConnectionString;
+        if (!connStr.Contains("QueueEndpoint"))
+        {
+            var blobEndpointMatch = System.Text.RegularExpressions.Regex.Match(connStr, @"BlobEndpoint=([^;]+)");
+            if (blobEndpointMatch.Success)
+            {
+                var blobEndpoint = blobEndpointMatch.Groups[1].Value;
+                var queueEndpoint = blobEndpoint.Replace(":10000", ":10001").Replace("blob", "queue");
+                connStr += $";QueueEndpoint={queueEndpoint}";
+            }
+            else
+            {
+                connStr += ";QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1";
+            }
+        }
+        var queueClient = new Azure.Storage.Queues.QueueClient(connStr, queueName);
+        await queueClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
+    }
+
+    private static bool IsValidQueueName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name) || name.Length < 3 || name.Length > 63)
+            return false;
+        // Pattern: ^[a-z0-9]+((-[a-z0-9]+)*)$
+        // - Must start with lowercase letter or digit
+        // - Can contain multiple sections of (dash followed by one or more alphanumerics)
+        // - Cannot start/end with dash, no consecutive dashes, no spaces
+        if (!System.Text.RegularExpressions.Regex.IsMatch(name, "^[a-z0-9]+((-[a-z0-9]+)*)$"))
+            return false;
+        return true;
+    }
     public async Task<IEnumerable<string>> GetQueuesAsync(CancellationToken cancellationToken = default)
     {
         Logger.LogDebug("GetQueuesAsync()");
@@ -159,25 +196,12 @@ public class AzuriteService : IAzuriteService
         await queueClient.DeleteMessageAsync(messageId, popReceipt, cancellationToken: cancellationToken);
     }
 
-    public async Task<IEnumerable<Azure.Storage.Queues.Models.QueueMessage>> GetQueueMessagesDetailedAsync(string queueName, int maxMessages = 32, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Azure.Storage.Queues.Models.PeekedMessage>> GetQueueMessagesDetailedAsync(string queueName, int maxMessages = 32, CancellationToken cancellationToken = default)
     {
-        var connStr = ConnectionString;
-        if (!connStr.Contains("QueueEndpoint"))
-        {
-            var blobEndpointMatch = System.Text.RegularExpressions.Regex.Match(connStr, @"BlobEndpoint=([^;]+)");
-            if (blobEndpointMatch.Success)
-            {
-                var blobEndpoint = blobEndpointMatch.Groups[1].Value;
-                var queueEndpoint = blobEndpoint.Replace(":10000", ":10001").Replace("blob", "queue");
-                connStr += $";QueueEndpoint={queueEndpoint}";
-            }
-            else
-            {
-                connStr += ";QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1";
-            }
-        }
-        var queueClient = new Azure.Storage.Queues.QueueClient(connStr, queueName);
-        var response = await queueClient.ReceiveMessagesAsync(maxMessages, cancellationToken: cancellationToken);
+        // Always use the connection string as provided in configuration (appsettings.json),
+        // which should include the correct QueueEndpoint and ports.
+        var queueClient = new Azure.Storage.Queues.QueueClient(ConnectionString, queueName);
+        var response = await queueClient.PeekMessagesAsync(maxMessages, cancellationToken: cancellationToken);
         return response.Value;
     }
 
@@ -205,6 +229,85 @@ public class AzuriteService : IAzuriteService
             result.Add(queue);
         }
         return result;
+    }
+
+    /// <summary>
+    /// Deletes the named queue if it exists.
+    /// </summary>
+    public async Task DeleteQueueAsync(string queueName, CancellationToken cancellationToken = default)
+    {
+        var connStr = ConnectionString;
+        if (!connStr.Contains("QueueEndpoint"))
+        {
+            var blobEndpointMatch = System.Text.RegularExpressions.Regex.Match(connStr, @"BlobEndpoint=([^;]+)");
+            if (blobEndpointMatch.Success)
+            {
+                var blobEndpoint = blobEndpointMatch.Groups[1].Value;
+                var queueEndpoint = blobEndpoint.Replace(":10000", ":10001").Replace("blob", "queue");
+                connStr += $";QueueEndpoint={queueEndpoint}";
+            }
+            else
+            {
+                connStr += ";QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1";
+            }
+        }
+
+        var queueClient = new Azure.Storage.Queues.QueueClient(connStr, queueName);
+        await queueClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
+    }
+
+    /// <summary>
+    /// Clears all messages from the named queue.
+    /// </summary>
+    public async Task ClearQueueAsync(string queueName, CancellationToken cancellationToken = default)
+    {
+        var connStr = ConnectionString;
+        if (!connStr.Contains("QueueEndpoint"))
+        {
+            var blobEndpointMatch = System.Text.RegularExpressions.Regex.Match(connStr, @"BlobEndpoint=([^;]+)");
+            if (blobEndpointMatch.Success)
+            {
+                var blobEndpoint = blobEndpointMatch.Groups[1].Value;
+                var queueEndpoint = blobEndpoint.Replace(":10000", ":10001").Replace("blob", "queue");
+                connStr += $";QueueEndpoint={queueEndpoint}";
+            }
+            else
+            {
+                connStr += ";QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1";
+            }
+        }
+
+        var queueClient = new Azure.Storage.Queues.QueueClient(connStr, queueName);
+        await queueClient.ClearMessagesAsync(cancellationToken: cancellationToken);
+    }
+
+    /// <summary>
+    /// Dequeues (receives and removes) a single message from the named queue and returns it.
+    /// </summary>
+    public async Task<Azure.Storage.Queues.Models.QueueMessage?> DequeueMessageAsync(string queueName, CancellationToken cancellationToken = default)
+    {
+        var connStr = ConnectionString;
+        if (!connStr.Contains("QueueEndpoint"))
+        {
+            var blobEndpointMatch = System.Text.RegularExpressions.Regex.Match(connStr, @"BlobEndpoint=([^;]+)");
+            if (blobEndpointMatch.Success)
+            {
+                var blobEndpoint = blobEndpointMatch.Groups[1].Value;
+                var queueEndpoint = blobEndpoint.Replace(":10000", ":10001").Replace("blob", "queue");
+                connStr += $";QueueEndpoint={queueEndpoint}";
+            }
+            else
+            {
+                connStr += ";QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1";
+            }
+        }
+
+        var queueClient = new Azure.Storage.Queues.QueueClient(connStr, queueName);
+        var response = await queueClient.ReceiveMessagesAsync(1, cancellationToken: cancellationToken);
+        var message = response.Value.FirstOrDefault();
+        if (message is null) return null;
+        await queueClient.DeleteMessageAsync(message.MessageId, message.PopReceipt, cancellationToken: cancellationToken);
+        return message;
     }
 
     #region Azurite Properties and Health

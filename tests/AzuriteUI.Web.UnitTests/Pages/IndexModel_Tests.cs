@@ -1,6 +1,8 @@
 using AzuriteUI.Web.Controllers.Models;
 using AzuriteUI.Web.Pages;
 using AzuriteUI.Web.Services.Repositories;
+using AzuriteUI.Web.Services.Azurite;
+using System.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -38,7 +40,10 @@ public class IndexModel_Tests
         repository.GetDashboardDataAsync(Arg.Any<CancellationToken>())
             .Returns(expectedDashboard);
 
-        var pageModel = new IndexModel(repository, logger);
+        var azuriteService = Substitute.For<IAzuriteService>();
+        azuriteService.GetQueuesAsync(Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<string>());
+
+        var pageModel = new IndexModel(repository, azuriteService, logger);
         pageModel.PageContext = new PageContext { HttpContext = new DefaultHttpContext() };
 
         // Act
@@ -62,7 +67,10 @@ public class IndexModel_Tests
         repository.GetDashboardDataAsync(Arg.Any<CancellationToken>())
             .ThrowsAsync(expectedException);
 
-        var pageModel = new IndexModel(repository, logger);
+        var azuriteService = Substitute.For<IAzuriteService>();
+        azuriteService.GetQueuesAsync(Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<string>());
+
+        var pageModel = new IndexModel(repository, azuriteService, logger);
         pageModel.PageContext = new PageContext { HttpContext = new DefaultHttpContext() };
 
         // Act
